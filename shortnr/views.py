@@ -1,5 +1,5 @@
 from django.core.cache import cache
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 
 from .basex import base_encode
@@ -56,6 +56,10 @@ def home(request):
 
         return render(request, 'shortnr/url.html', {'short_url': short_url})
 
+    else:
+        return render(request, 'shortnr/home.html')
+
 
 def redirect_to_full_url(request, short_path):
-    return redirect('https://www.google.com')
+    link = get_object_or_404(ShortLink, short_path=short_path)
+    return redirect(link.url)

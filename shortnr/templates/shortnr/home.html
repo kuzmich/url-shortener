@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>URL shortener service</title>
+</head>
+<body>
+    <form method="post">
+        {% csrf_token %}
+        <label>
+            Type URL to shorten
+            <input type="text" name="url">
+        </label>
+        <button type="submit">Shorten</button>
+    </form>
+</body>
+</html>

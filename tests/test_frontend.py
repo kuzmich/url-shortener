@@ -1,5 +1,10 @@
 from unittest.mock import patch
+
+from django.urls import reverse
+from model_mommy import mommy
 import pytest
+
+from shortnr.models import ShortLink
 
 
 @patch('shortnr.views.cache')
@@ -7,7 +12,6 @@ import pytest
 def test_create_short_url(cache, django_app_factory):
     import re
     from shortnr.basex import BASE_LIST
-    from shortnr.models import ShortLink
 
     client = django_app_factory(csrf_checks=False)
 
@@ -32,3 +36,20 @@ def test_create_short_url(cache, django_app_factory):
     sl = ShortLink.objects.get()
     assert sl.url == long_url
     assert sl.short_path == short_link.split('/')[-1]
+
+
+@pytest.mark.django_db
+def test_redirect_to_full_url(client):
+    from shortnr.basex import base_encode
+
+    # Given there's a short URL in the database
+    link = mommy.make('ShortLink', url='https://www.google.com', short_path=base_encode(5555))
+
+    # When user types a short URL in a browser
+    resp = client.get(
+        reverse('short_url_redirect', kwargs={'short_path': link.short_path})
+    )
+
+    # Then he's redirected to full URL
+    assert resp.status_code == 302
+    assert resp['Location'] == link.url
