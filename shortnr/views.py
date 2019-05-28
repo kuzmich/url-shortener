@@ -14,17 +14,14 @@ def home(request):
 
         return False
 
-    def get_short_url_from_cache(url):
-        pass
-
-    def get_short_url_from_database(url):
+    def get_short_path_from_database(url):
         try:
             sl = ShortLink.objects.get(url=url)
-            return request.build_absolute_uri(sl.short_path)
+            return sl.short_path
         except ShortLink.DoesNotExist:
             return None
 
-    def generate_short_url_with_base_62(url):
+    def generate_short_path_with_base_62(url):
 
         def get_next_id():
             try:
@@ -35,10 +32,16 @@ def home(request):
 
         short_path = base_encode(get_next_id())
         ShortLink(url=url, short_path=short_path).save()
+        return short_path
 
-        return request.build_absolute_uri(
-            reverse('short_url_redirect', kwargs={'short_path': short_path})
-        )
+    def save_to_user_links(link):
+        user_links = request.session.setdefault('user_links', [])
+        user_links.insert(0, short_path)
+        request.session.modified = True
+
+
+    context = {}
+    context['user_links'] = ShortLink.objects.filter(short_path__in=request.session.get('user_links', []))
 
     if request.method == 'POST':
         url = request.POST['url']
@@ -46,18 +49,14 @@ def home(request):
         if not is_valid_url(url):
             pass
 
-        short_url = get_short_url_from_cache(url)
+        short_path = get_short_path_from_database(url)
+        if not short_path:
+            short_path = generate_short_path_with_base_62(url)
 
-        if not short_url:
-            short_url = get_short_url_from_database(url)
+        save_to_user_links(short_path)
+        context['new_short_url'] = short_path
 
-        if not short_url:
-            short_url = generate_short_url_with_base_62(url)
-
-        return render(request, 'shortnr/url.html', {'short_url': short_url})
-
-    else:
-        return render(request, 'shortnr/home.html')
+    return render(request, 'shortnr/home.html', context)
 
 
 def redirect_to_full_url(request, short_path):
