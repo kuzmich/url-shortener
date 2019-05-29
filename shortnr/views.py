@@ -62,5 +62,10 @@ def home(request):
 
 
 def redirect_to_full_url(request, short_path):
+    full_url = cache.get(short_path)
+    if full_url:
+        return redirect(full_url)
+
     link = get_object_or_404(ShortLink, short_path=short_path)
+    cache.set(short_path, link.url, 60 * 60 * 2)
     return redirect(link.url)

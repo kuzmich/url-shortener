@@ -39,7 +39,7 @@ def test_create_short_url(cache, django_app_factory):
 
 
 @pytest.mark.django_db
-def test_custom_url(cache, django_app_factory):
+def test_custom_url(django_app_factory):
     client = django_app_factory(csrf_checks=False)
     long_url = 'https://moxie.org/stories/chernobyl-scene-report/'
     custom_path = 'chernobyl-scene-report'
@@ -77,3 +77,18 @@ def test_redirect_to_full_url(client):
     # Then he's redirected to full URL
     assert resp.status_code == 302
     assert resp['Location'] == link.url
+
+
+@patch('shortnr.views.cache')
+def test_cached_url(cache, client):
+    # Given a short URL is cached in Redis
+    cache.get.return_value = 'https://www.google.com'
+
+    # When a user follows such short link
+    resp = client.get(
+        reverse('short_url_redirect', kwargs={'short_path': 'abZ'})
+    )
+
+    # Then full URL is retrieved from cache (not using database)
+    assert resp.status_code == 302
+    assert resp['Location'] == 'https://www.google.com'
