@@ -3,16 +3,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 
 from .basex import base_encode
+from .forms import UrlForm
 from .models import ShortLink
 
 
 def home(request):
-    def is_valid_url(url):
-        if len(url) <= 2000 \
-           and (url.startswith('http://') or url.startswith('https://')):
-            return True
-
-        return False
 
     def get_short_path_from_database(url):
         try:
@@ -39,23 +34,30 @@ def home(request):
         user_links.insert(0, short_path)
         request.session.modified = True
 
-
     context = {}
-    context['user_links'] = ShortLink.objects.filter(short_path__in=request.session.get('user_links', []))
+    form = UrlForm()
 
     if request.method == 'POST':
-        url = request.POST['url']
+        form = UrlForm(request.POST)
 
-        if not is_valid_url(url):
-            pass
+        if form.is_valid():
+            url = form.cleaned_data['url']
+            custom_path = form.cleaned_data['custom_path']
 
-        short_path = get_short_path_from_database(url)
-        if not short_path:
-            short_path = generate_short_path_with_base_62(url)
+            if custom_path:
+                ShortLink(url=url, short_path=custom_path).save()
+                short_path = custom_path
+            else:
+                short_path = get_short_path_from_database(url)
+                if not short_path:
+                    short_path = generate_short_path_with_base_62(url)
 
-        save_to_user_links(short_path)
-        context['new_short_url'] = short_path
+            save_to_user_links(short_path)
+            context['new_short_url'] = short_path
+            form = UrlForm()  # clean the form after successful operation
 
+    context['user_links'] = ShortLink.objects.filter(short_path__in=request.session.get('user_links', []))
+    context['form'] = form
     return render(request, 'shortnr/home.html', context)
 
 

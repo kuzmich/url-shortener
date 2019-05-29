@@ -39,6 +39,30 @@ def test_create_short_url(cache, django_app_factory):
 
 
 @pytest.mark.django_db
+def test_custom_url(cache, django_app_factory):
+    client = django_app_factory(csrf_checks=False)
+    long_url = 'https://moxie.org/stories/chernobyl-scene-report/'
+    custom_path = 'chernobyl-scene-report'
+
+    # Given there's no such custom URL in the db
+
+    # When user clicks 'Shorten' button
+    resp = client.post(
+        reverse('home'),
+        {'url': long_url, 'custom_path': custom_path}
+    )
+
+    # Then there's a custom link in the response
+    short_link = resp.lxml.xpath('//input[@id="short-url"]/@value')[0]
+    assert 'http://testserver/%s' % custom_path == short_link
+
+    # and there's a record in the db
+    sl = ShortLink.objects.get()
+    assert sl.url == long_url
+    assert sl.short_path == custom_path
+
+
+@pytest.mark.django_db
 def test_redirect_to_full_url(client):
     from shortnr.basex import base_encode
 

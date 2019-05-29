@@ -7,17 +7,21 @@
 </head>
 <body>
     {% if new_short_url %}
-        <input type="text" id="short-url" name="short-url" readonly value="{% short_url new_short_url %}">
+        <input type="text" id="short-url" readonly value="{% short_url new_short_url %}">
         <button type="button">Copy</button>
     {% endif %}
 
+    {{ form.non_field_errors }}
     <form method="post">
         {% csrf_token %}
-        <label>
-            Type URL to shorten
-            <input type="text" name="url">
-        </label>
+        {{ form.url.label_tag }}
+        {{ form.url }}
+        {{ form.url.errors }}
         <button type="submit">Shorten</button>
+        <br>
+        {{ form.custom_path.label_tag }}
+        {{ form.custom_path }}
+        {{ form.custom_path.errors }}
     </form>
 
     {% if user_links %}
@@ -25,7 +29,11 @@
         <caption title="">Your short links</caption>
             {% for link in user_links %}
                 <tr>
-                    <td>{{ link.url }}</td>
+                    <td>
+                        <span{% if link.url|length > 100 %} title="{{ link.url }}"{% endif %}>
+                            {{ link.url | truncatechars:100 }}
+                        </span>
+                    </td>
                     <td>{% short_url link.short_path %}</td>
                     <td><button type="button">Copy</button></td>
                 </tr>
