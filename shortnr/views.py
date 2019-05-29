@@ -1,38 +1,51 @@
 from django.core.cache import cache
+from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 
 from .basex import base_encode
 from .forms import UrlForm
-from .models import ShortLink
+from .models import ShortLink, UserLink
 
 
 def home(request):
 
-    def get_short_path_from_database(url):
+    def get_short_link_from_database(url):
         try:
-            sl = ShortLink.objects.get(url=url)
-            return sl.short_path
+            return ShortLink.objects.get(url=url)
         except ShortLink.DoesNotExist:
             return None
 
-    def generate_short_path_with_base_62(url):
+    def generate_short_link_with_base_62(url):
 
         def get_next_id():
             try:
                 return cache.incr('short_url_id')
             except ValueError:
-                cache.set('short_url_id', 62 ** 2 - 1)  # we'll start with 3 symbol URLs
+                cache.set('short_url_id', 62 ** 2 - 1, None)  # we'll start with 3 symbol URLs
                 return cache.incr('short_url_id')
 
         short_path = base_encode(get_next_id())
-        ShortLink(url=url, short_path=short_path).save()
-        return short_path
+        link = ShortLink(url=url, short_path=short_path)
+        link.save()
+        return link
 
     def save_to_user_links(link):
-        user_links = request.session.setdefault('user_links', [])
-        user_links.insert(0, short_path)
-        request.session.modified = True
+        # user_links = request.session.setdefault('user_links', [])
+        # user_links.append(link.short_path)
+        # request.session.modified = True
+        if 'sessionid' in request.COOKIES:
+            UserLink(user_id=request.COOKIES['sessionid'], link=link).save()
+
+    def get_user_links():
+        if 'sessionid' in request.COOKIES:
+            qs = ShortLink.objects.filter(userlink__user_id=request.COOKIES['sessionid'])\
+                                  .order_by('-userlink__created_at')
+            paginator = Paginator(qs, 10)
+            return paginator.get_page(request.GET.get('page'))
+        else:
+            return []
+
 
     context = {}
     form = UrlForm()
@@ -45,18 +58,18 @@ def home(request):
             custom_path = form.cleaned_data['custom_path']
 
             if custom_path:
-                ShortLink(url=url, short_path=custom_path).save()
-                short_path = custom_path
+                link = ShortLink(url=url, short_path=custom_path)
+                link.save()
             else:
-                short_path = get_short_path_from_database(url)
-                if not short_path:
-                    short_path = generate_short_path_with_base_62(url)
+                link = get_short_link_from_database(url)
+                if not link:
+                    link = generate_short_link_with_base_62(url)
 
-            save_to_user_links(short_path)
-            context['new_short_url'] = short_path
+            save_to_user_links(link)
+            context['new_short_url'] = link.short_path
             form = UrlForm()  # clean the form after successful operation
 
-    context['user_links'] = ShortLink.objects.filter(short_path__in=request.session.get('user_links', []))
+    context['user_links'] = get_user_links()
     context['form'] = form
     return render(request, 'shortnr/home.html', context)
 
