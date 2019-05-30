@@ -30,8 +30,8 @@
 
         {% if user_links %}
             <h2>Your short links</h2>
+            <div class="table-responsive">
             <table class="table">
-                <caption title="">Your short links</caption>
                 {% for link in user_links %}
                     <tr>
                         <td>
@@ -44,6 +44,7 @@
                     </tr>
                 {% endfor %}
             </table>
+            </div>
             {% include 'shortnr/paginator.html' with page_obj=user_links %}
         {% endif %}
     </div>

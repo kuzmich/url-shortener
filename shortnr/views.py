@@ -1,3 +1,5 @@
+import logging
+
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import IntegrityError
@@ -6,6 +8,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .basex import base_encode
 from .forms import UrlForm
 from .models import ShortLink, UserLink
+
+logger = logging.getLogger(__name__)
 
 
 def home(request):
@@ -31,24 +35,20 @@ def home(request):
         return link
 
     def save_to_user_links(link):
-        if 'sessionid' in request.COOKIES:
-            try:
-                UserLink(user_id=request.COOKIES['sessionid'], link=link).save()
-            except IntegrityError:  # if link is already appended to user's links
-                pass
-        #
-        # user_links = request.session.setdefault('user_links', [])
-        # user_links.append(link.short_path)
-        # request.session.modified = True
+        user_links = request.session.setdefault('user_links', [])
+        user_links.append(link.short_path)
+        request.session.modified = True
+
+        try:
+            UserLink(session_id=request.session.session_key, link=link).save()
+        except IntegrityError:  # if link is already appended to user's links
+            pass
 
     def get_user_links():
-        if 'sessionid' in request.COOKIES:
-            qs = ShortLink.objects.filter(userlink__user_id=request.COOKIES['sessionid'])\
-                                  .order_by('-userlink__created_at')
-            paginator = Paginator(qs, 10)
-            return paginator.get_page(request.GET.get('page'))
-        else:
-            return []
+        qs = ShortLink.objects.filter(userlink__session_id=request.session.session_key)\
+                              .order_by('-userlink__created_at')
+        paginator = Paginator(qs, 10)
+        return paginator.get_page(request.GET.get('page'))
 
     context = {}
     form = UrlForm()
