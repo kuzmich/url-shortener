@@ -35,6 +35,7 @@ def home(request):
         return link
 
     def save_to_user_links(link):
+        # TODO Remove it if session is created automatically, or create it manually
         user_links = request.session.setdefault('user_links', [])
         user_links.append(link.short_path)
         request.session.modified = True
