@@ -3,7 +3,8 @@ from django.db import models
 
 class ShortLink(models.Model):
     url = models.URLField(db_index=True)
-    short_path = models.CharField(max_length=10, db_index=True, unique=True)
+    short_path = models.CharField(max_length=25, db_index=True, unique=True)
+    custom = models.BooleanField(default=False)
     # created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

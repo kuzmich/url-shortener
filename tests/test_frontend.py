@@ -39,7 +39,7 @@ def test_create_short_url(cache, django_app_factory):
 
 
 @pytest.mark.django_db
-def test_custom_url(django_app_factory):
+def test_create_custom_url(django_app_factory):
     client = django_app_factory(csrf_checks=False)
     long_url = 'https://moxie.org/stories/chernobyl-scene-report/'
     custom_path = 'chernobyl-scene-report'
@@ -92,3 +92,8 @@ def test_cached_url(cache, client):
     # Then full URL is retrieved from cache (not using database)
     assert resp.status_code == 302
     assert resp['Location'] == 'https://www.google.com'
+
+
+# TODO Test creating custom link if short link already exists
+# TODO Test creating short link if custom link already exists
+# TODO Test shortening if both custom link and short link exist

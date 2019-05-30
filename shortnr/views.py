@@ -1,7 +1,7 @@
 from django.core.cache import cache
 from django.core.paginator import Paginator
+from django.db import IntegrityError
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
 
 from .basex import base_encode
 from .forms import UrlForm
@@ -12,7 +12,7 @@ def home(request):
 
     def get_short_link_from_database(url):
         try:
-            return ShortLink.objects.get(url=url)
+            return ShortLink.objects.get(url=url, custom=False)
         except ShortLink.DoesNotExist:
             return None
 
@@ -35,7 +35,10 @@ def home(request):
         # user_links.append(link.short_path)
         # request.session.modified = True
         if 'sessionid' in request.COOKIES:
-            UserLink(user_id=request.COOKIES['sessionid'], link=link).save()
+            try:
+                UserLink(user_id=request.COOKIES['sessionid'], link=link).save()
+            except IntegrityError:  # if link is already appended to user's links
+                pass
 
     def get_user_links():
         if 'sessionid' in request.COOKIES:
@@ -58,7 +61,7 @@ def home(request):
             custom_path = form.cleaned_data['custom_path']
 
             if custom_path:
-                link = ShortLink(url=url, short_path=custom_path)
+                link = ShortLink(url=url, short_path=custom_path, custom=True)
                 link.save()
             else:
                 link = get_short_link_from_database(url)
