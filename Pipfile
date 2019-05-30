@@ -14,6 +14,7 @@ lxml = "*"
 [packages]
 django = "*"
 django-redis-cache = "*"
+django-crispy-forms = "*"
 
 [requires]
 python_version = "3.7"

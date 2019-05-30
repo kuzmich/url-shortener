@@ -1,45 +1,61 @@
+{% load crispy_forms_tags %}
 {% load short_url from shortnr %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>URL shortener service</title>
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+          crossorigin="anonymous">
 </head>
 <body>
-    {% if new_short_url %}
-        <input type="text" id="short-url" readonly value="{% short_url new_short_url %}">
-        <button type="button">Copy</button>
-    {% endif %}
+    <div class="container">
+        {% if new_short_url %}
+            <div class="form-group">
+                <label for="short-url">Short URL</label>
+                <input type="text" id="short-url" class="form-control" readonly value="{% short_url new_short_url %}">
+            </div>
+            <button type="button" class="btn btn-outline-success">Copy</button>
+        {% endif %}
 
-    {{ form.non_field_errors }}
-    <form method="post">
-        {% csrf_token %}
-        {{ form.url.label_tag }}
-        {{ form.url }}
-        {{ form.url.errors }}
-        <button type="submit">Shorten</button>
-        <br>
-        {{ form.custom_path.label_tag }}
-        {{ form.custom_path }}
-        {{ form.custom_path.errors }}
-    </form>
+        {{ form.non_field_errors }}
+        <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-primary">Shorten</button>
+        </form>
 
-    {% if user_links %}
-        <table>
-            <caption title="">Your short links</caption>
-            {% for link in user_links %}
-                <tr>
-                    <td>
-                        <span{% if link.url|length > 100 %} title="{{ link.url }}"{% endif %}>
-                            {{ link.url | truncatechars:100 }}
-                        </span>
-                    </td>
-                    <td>{% short_url link.short_path %}</td>
-                    <td><button type="button">Copy</button></td>
-                </tr>
-            {% endfor %}
-        </table>
-        {% include 'shortnr/paginator.html' with page_obj=user_links %}
-    {% endif %}
+        {% if user_links %}
+            <h2>Your short links</h2>
+            <table class="table">
+                <caption title="">Your short links</caption>
+                {% for link in user_links %}
+                    <tr>
+                        <td>
+                            <span{% if link.url|length > 100 %} title="{{ link.url }}"{% endif %}>
+                                {{ link.url | truncatechars:100 }}
+                            </span>
+                        </td>
+                        <td>{% short_url link.short_path %}</td>
+                        <td><button type="button">Copy</button></td>
+                    </tr>
+                {% endfor %}
+            </table>
+            {% include 'shortnr/paginator.html' with page_obj=user_links %}
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            crossorigin="anonymous"></script>
 </body>
 </html>

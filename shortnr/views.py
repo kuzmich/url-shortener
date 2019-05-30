@@ -31,14 +31,15 @@ def home(request):
         return link
 
     def save_to_user_links(link):
-        # user_links = request.session.setdefault('user_links', [])
-        # user_links.append(link.short_path)
-        # request.session.modified = True
         if 'sessionid' in request.COOKIES:
             try:
                 UserLink(user_id=request.COOKIES['sessionid'], link=link).save()
             except IntegrityError:  # if link is already appended to user's links
                 pass
+        #
+        # user_links = request.session.setdefault('user_links', [])
+        # user_links.append(link.short_path)
+        # request.session.modified = True
 
     def get_user_links():
         if 'sessionid' in request.COOKIES:
@@ -48,7 +49,6 @@ def home(request):
             return paginator.get_page(request.GET.get('page'))
         else:
             return []
-
 
     context = {}
     form = UrlForm()
